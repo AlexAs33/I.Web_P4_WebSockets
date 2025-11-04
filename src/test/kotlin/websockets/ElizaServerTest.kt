@@ -8,7 +8,7 @@ import jakarta.websocket.ContainerProvider
 import jakarta.websocket.OnMessage
 import jakarta.websocket.Session
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -36,7 +36,6 @@ class ElizaServerTest {
         assertEquals("The doctor is in.", list[0])
     }
 
-    @Disabled // Remove this line when you implement onChat
     @Test
     fun onChat() {
         logger.info { "Test thread" }
@@ -48,9 +47,13 @@ class ElizaServerTest {
         latch.await()
         val size = list.size
         // 1. EXPLAIN WHY size = list.size IS NECESSARY
+        // Porque necesitas tener un valor estable para el tamaño. Ya que aveces puede ser 4 o 5.
         // 2. REPLACE BY assertXXX expression that checks an interval; assertEquals must not be used;
+        assertTrue(size in 4..5, "El tamaño fue de $size. Se esperaba entre 4 y 5")
         // 3. EXPLAIN WHY assertEquals CANNOT BE USED AND WHY WE SHOULD CHECK THE INTERVAL
+        // Este tamaño puede variar entre 4 y 5 dependiendo del dispositivo. Con asserEquals forzamos a uno de los dos
         // 4. COMPLETE assertEquals(XXX, list[XXX])
+        assertEquals("Please don't apologize.", list[3]) // Respuiesta a sorry. Es única
     }
 }
 
@@ -73,7 +76,6 @@ class ComplexClient(
     private val latch: CountDownLatch,
 ) {
     @OnMessage
-    @Suppress("UNUSED_PARAMETER") // Remove this line when you implement onMessage
     fun onMessage(
         message: String,
         session: Session,
@@ -81,9 +83,11 @@ class ComplexClient(
         logger.info { "Client received: $message" }
         list.add(message)
         latch.countDown()
-        // 5. COMPLETE if (expression) {
-        // 6. COMPLETE   sentence
-        // }
+        if (message == "---") {
+            session.basicRemote.sendText("sorry")
+            // Mandamos"sorry" al servidor. Ya que es la unica frase con respuesta única: "Please don't apologize."
+            logger.info { list.size }
+        }
     }
 }
 
